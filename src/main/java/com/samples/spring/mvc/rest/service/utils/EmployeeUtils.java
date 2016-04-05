@@ -1,43 +1,61 @@
 package com.samples.spring.mvc.rest.service.utils;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.samples.spring.mvc.rest.service.beans.Employee;
+import com.samples.spring.mvc.rest.service.dao.EmployeeDAO;
 
 public class EmployeeUtils {
-	private final static EmployeeUtils selfInstance = new EmployeeUtils();
+	private static EmployeeUtils selfInstance = null;
+	private static ApplicationContext context = null;
+	private static final String EMPLOYEE_DAO_BEAN_NAME = "employeeDataDAO";
+	
+	private EmployeeDAO employeeDAO;
+	private AtomicInteger idCounter = new AtomicInteger(0);
+	
+	static {
+		init();
+	}
+	
+	private static void init() {
+		try {
+			context = new ClassPathXmlApplicationContext("spring_db_config.xml");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private EmployeeUtils() {
+		employeeDAO = (EmployeeDAO) context.getBean(EMPLOYEE_DAO_BEAN_NAME);
+	}
 	
 	public static EmployeeUtils getInstance() {
+		if(selfInstance == null) {
+			selfInstance = new EmployeeUtils();	
+		}
 		return selfInstance;
 	}
 	
-	private Map<Integer, Employee> employees = new HashMap<Integer, Employee>();
-	
-	private EmployeeUtils() {
-		Employee emp1 = new Employee();
-		emp1.setName("Manish");
-		emp1.setAge(32);
-		emp1.setAddress("Phoenix, AZ");
-		employees.put(1, emp1);
-		
-		Employee emp2 = new Employee();
-		emp2.setName("Aarti");
-		emp2.setAge(30);
-		emp2.setAddress("Peoria, AZ");
-		employees.put(2, emp2);
-	}
-	
-	public Map<Integer, Employee> getAllEmployees() {
+	public List<Employee> getAllEmployees() {
+		List<Employee> employees = employeeDAO.getAllEmployees();
 		return employees;
 	}
 	
-	public boolean deleteEmployee(int id) {
-		boolean isDeleted = false;
-		if(employees.containsKey(id)) {
-			employees.remove(id);
-			isDeleted = true;
-		}
+	public Employee getEmployee(int id) {
+		Employee employee = employeeDAO.getEmployee(id);
+		return employee;
+	}
+	
+	public void addEmployee(Employee employee) {
+		employeeDAO.add(employee.getName(), employee.getAddress(), employee.getAge());
+	}
+	
+	public boolean removeEmployee(int id) {
+		boolean isDeleted = employeeDAO.remove(id);
 		return isDeleted;
 	}
 	
